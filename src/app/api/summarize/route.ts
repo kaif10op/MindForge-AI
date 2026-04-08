@@ -5,7 +5,6 @@ import { summarizeSchema } from "@/lib/validators/schemas";
 import { generateAIResponse } from "@/lib/ai/openai";
 import { SUMMARIZE_SYSTEM_PROMPT, SUMMARIZE_USER_PROMPT } from "@/lib/ai/prompts";
 import { extractVideoId } from "@/lib/utils";
-import { YoutubeTranscript } from "youtube-transcript";
 
 export async function POST(request: Request) {
   try {
@@ -55,16 +54,33 @@ export async function POST(request: Request) {
       });
     }
 
-    // Fetch transcript
+    // Fetch transcript via Proxy API to avoid Vercel edge-blocks
     let transcriptText: string;
     try {
-      const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
-      transcriptText = transcriptItems.map((item) => item.text).join(" ");
+      const proxyResponse = await fetch(
+        `https://youtube-transcript3.p.rapidapi.com/api/transcript-with-metadata?videoid=${videoId}&lang=en`, 
+        {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': 'youtube-transcript3.p.rapidapi.com',
+            'x-rapidapi-key': process.env.RAPID_API_KEY || ''
+          }
+        }
+      );
+
+      if (!proxyResponse.ok) {
+        throw new Error('Proxy blocked or video has no captions');
+      }
+
+      const { transcript } = await proxyResponse.json();
+      // The API returns an array of segment objects
+      transcriptText = transcript.map((item: any) => item.text).join(" ");
+      
     } catch {
       return NextResponse.json(
         {
           error:
-            "Could not fetch transcript. The video may not have subtitles/captions available.",
+            "Could not fetch transcript via proxy. The video may not have subtitles/captions available.",
         },
         { status: 400 }
       );
