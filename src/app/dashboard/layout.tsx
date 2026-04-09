@@ -1,11 +1,8 @@
 "use client";
 
 import { useUser } from "@/hooks/use-user";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
-import { MobileNav } from "@/components/layout/mobile-nav";
+import { Desktop } from "@/components/os/Desktop";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
 
 export default function DashboardLayout({
   children,
@@ -13,7 +10,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading, signOut } = useUser();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {
     return (
@@ -31,29 +27,5 @@ export default function DashboardLayout({
 
   if (!user) return null;
 
-  return (
-    <div className="min-h-screen flex bg-background">
-      {/* Desktop Sidebar */}
-      <Sidebar user={user} className="hidden lg:flex" />
-
-      {/* Mobile Nav */}
-      <MobileNav
-        user={user}
-        open={sidebarOpen}
-        onOpenChange={setSidebarOpen}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
-        <Topbar
-          user={user}
-          signOut={signOut}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+  return <Desktop>{children}</Desktop>;
 }
