@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     let transcriptText: string;
     try {
       const proxyResponse = await fetch(
-        `https://youtube-transcriptor.p.rapidapi.com/?video_id=${videoId}&lang=en`, 
+        `https://youtube-transcriptor.p.rapidapi.com/transcript?video_id=${videoId}&lang=en`, 
         {
           method: 'GET',
           headers: {
@@ -73,9 +73,11 @@ export async function POST(request: Request) {
 
       const jsonResponse = await proxyResponse.json();
       
-      // The API provides the entire transcript as a single block of text
-      if (jsonResponse.transcriptionAsText) {
-        transcriptText = jsonResponse.transcriptionAsText;
+      // The API provides the entire transcript as a single block of text inside an array
+      const transcriptData = Array.isArray(jsonResponse) ? jsonResponse[0] : jsonResponse;
+      
+      if (transcriptData && transcriptData.transcriptionAsText) {
+        transcriptText = transcriptData.transcriptionAsText;
       } else {
         throw new Error('Transcription missing in response');
       }
