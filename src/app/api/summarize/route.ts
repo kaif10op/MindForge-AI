@@ -5,7 +5,6 @@ import { summarizeSchema } from "@/lib/validators/schemas";
 import { generateAIResponse } from "@/lib/ai/openai";
 import { SUMMARIZE_SYSTEM_PROMPT, SUMMARIZE_USER_PROMPT } from "@/lib/ai/prompts";
 import { extractVideoId } from "@/lib/utils";
-import { YoutubeTranscript } from "youtube-transcript";
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -54,16 +53,39 @@ export async function POST(request: Request) {
       });
     }
 
-    // Fetch transcript
+    // Fetch transcript via newly provided RapidAPI endpoint
     let transcriptText: string;
     try {
-      const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
-      transcriptText = transcriptItems.map((item) => item.text).join(" ");
-    } catch {
+      const proxyResponse = await fetch(
+        `https://youtube-transcriptor.p.rapidapi.com/?video_id=${videoId}&lang=en`, 
+        {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-host': 'youtube-transcriptor.p.rapidapi.com',
+            'x-rapidapi-key': process.env.RAPID_API_KEY || ''
+          }
+        }
+      );
+
+      if (!proxyResponse.ok) {
+        throw new Error(`Proxy failed with status: ${proxyResponse.status}`);
+      }
+
+      const jsonResponse = await proxyResponse.json();
+      
+      // The API provides the entire transcript as a single block of text
+      if (jsonResponse.transcriptionAsText) {
+        transcriptText = jsonResponse.transcriptionAsText;
+      } else {
+        throw new Error('Transcription missing in response');
+      }
+      
+    } catch (error) {
+      console.error("Transcript fetch error:", error);
       return NextResponse.json(
         {
           error:
-            "Could not fetch transcript. The video may not have subtitles/captions available.",
+            "Could not fetch transcript via proxy. The video may not have subtitles/captions available.",
         },
         { status: 400 }
       );
