@@ -8,10 +8,16 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    
     if (!error) {
+      console.log("Code exchange successful, redirecting to:", next);
       return NextResponse.redirect(`${origin}${next}`);
+    } else {
+      console.error("Code exchange failed:", error);
     }
+  } else {
+    console.warn("No code provided to callback route.");
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth_failed`);

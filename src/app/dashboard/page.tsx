@@ -140,40 +140,47 @@ export default function DashboardPage() {
             label: "Notes",
             count: stats.notes,
             icon: FileText,
-            color: "text-blue-500",
-            bg: "bg-blue-500/10",
+            color: "text-blue-400",
+            bg: "bg-blue-500/20",
             href: "/dashboard/notes",
           },
           {
             label: "Summaries",
             count: stats.summaries,
             icon: PlaySquare,
-            color: "text-red-500",
-            bg: "bg-red-500/10",
+            color: "text-red-400",
+            bg: "bg-red-500/20",
             href: "/dashboard/summarizer",
           },
           {
             label: "Research",
             count: stats.research,
             icon: Search,
-            color: "text-emerald-500",
-            bg: "bg-emerald-500/10",
+            color: "text-emerald-400",
+            bg: "bg-emerald-500/20",
             href: "/dashboard/research",
           },
         ].map((stat) => (
           <Link key={stat.label} href={stat.href}>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 border-border/50 py-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+            <motion.div whileHover={{ scale: 1.02, y: -4 }} whileTap={{ scale: 0.98 }}>
+              <Card className="cursor-pointer transition-all duration-300 py-0 bg-white/5 backdrop-blur-xl border-white/10 hover:border-white/30 hover:bg-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+                <CardContent className="p-6 relative overflow-hidden">
+                  <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: stat.color.replace('text-', '') }} />
+                  <div className="flex items-center justify-between relative z-10">
                     <div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm font-medium text-white/60 tracking-wider uppercase">
                         {stat.label}
                       </p>
-                      <p className="text-3xl font-bold mt-1">{stat.count}</p>
+                      <motion.p 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-4xl font-light mt-2 text-white"
+                      >
+                        {stat.count}
+                      </motion.p>
                     </div>
-                    <div className={`p-3 rounded-xl ${stat.bg}`}>
-                      <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                    <div className={`p-4 rounded-2xl ${stat.bg} shadow-Inner`}>
+                      <stat.icon className={`w-7 h-7 ${stat.color} filter drop-shadow-md`} />
                     </div>
                   </div>
                 </CardContent>
@@ -185,7 +192,7 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <motion.div variants={itemVariants}>
-        <Card className="border-border/50">
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-lg">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -229,8 +236,8 @@ export default function DashboardPage() {
       {/* Recent Activity */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Notes */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-lg h-full">
+          <CardHeader className="pb-3 border-b border-white/5">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="w-4 h-4 text-blue-500" />
@@ -270,8 +277,8 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Summaries */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-lg h-full">
+          <CardHeader className="pb-3 border-b border-white/5">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <PlaySquare className="w-4 h-4 text-red-500" />
@@ -316,8 +323,8 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Research */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10 shadow-lg h-full">
+          <CardHeader className="pb-3 border-b border-white/5">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-emerald-500" />

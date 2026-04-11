@@ -5,6 +5,8 @@ import { summarizeSchema } from "@/lib/validators/schemas";
 import { generateAIResponse } from "@/lib/ai/openai";
 import { SUMMARIZE_SYSTEM_PROMPT, SUMMARIZE_USER_PROMPT } from "@/lib/ai/prompts";
 import { extractVideoId } from "@/lib/utils";
+import { fetchYouTubeTranscript } from "@/lib/youtube-transcript";
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -53,41 +55,50 @@ export async function POST(request: Request) {
       });
     }
 
-    // Fetch transcript via newly provided RapidAPI endpoint
-    let transcriptText: string;
+    // Fetch transcript — Method 1: Direct YouTube scraping (free, no API key)
+    let transcriptText: string = "";
+    let transcriptError: string = "";
+
     try {
-      const proxyResponse = await fetch(
-        `https://youtube-transcriptor.p.rapidapi.com/transcript?video_id=${videoId}&lang=en`, 
-        {
-          method: 'GET',
-          headers: {
-            'x-rapidapi-host': 'youtube-transcriptor.p.rapidapi.com',
-            'x-rapidapi-key': process.env.RAPID_API_KEY || ''
+      transcriptText = await fetchYouTubeTranscript(videoId);
+    } catch (err: any) {
+      console.warn("Direct YouTube transcript scraping failed:", err?.message);
+      transcriptError = err?.message || "Unknown error";
+    }
+
+    // Fallback — Method 2: RapidAPI (if free method failed and key is available)
+    if (!transcriptText && process.env.RAPID_API_KEY) {
+      try {
+        const proxyResponse = await fetch(
+          `https://youtube-transcriptor.p.rapidapi.com/transcript?video_id=${videoId}`,
+          {
+            method: "GET",
+            headers: {
+              "x-rapidapi-host": "youtube-transcriptor.p.rapidapi.com",
+              "x-rapidapi-key": process.env.RAPID_API_KEY,
+            },
+          }
+        );
+
+        if (proxyResponse.ok) {
+          const jsonResponse = await proxyResponse.json();
+          const transcriptData = Array.isArray(jsonResponse)
+            ? jsonResponse[0]
+            : jsonResponse;
+          if (transcriptData?.transcriptionAsText) {
+            transcriptText = transcriptData.transcriptionAsText;
           }
         }
-      );
-
-      if (!proxyResponse.ok) {
-        throw new Error(`Proxy failed with status: ${proxyResponse.status}`);
+      } catch (err: any) {
+        console.warn("RapidAPI fallback also failed:", err?.message);
       }
+    }
 
-      const jsonResponse = await proxyResponse.json();
-      
-      // The API provides the entire transcript as a single block of text inside an array
-      const transcriptData = Array.isArray(jsonResponse) ? jsonResponse[0] : jsonResponse;
-      
-      if (transcriptData && transcriptData.transcriptionAsText) {
-        transcriptText = transcriptData.transcriptionAsText;
-      } else {
-        throw new Error('Transcription missing in response');
-      }
-      
-    } catch (error) {
-      console.error("Transcript fetch error:", error);
+    // If both methods failed, return error
+    if (!transcriptText) {
       return NextResponse.json(
         {
-          error:
-            "Could not fetch transcript via proxy. The video may not have subtitles/captions available.",
+          error: `Could not fetch transcript. The video may not have captions available. Details: ${transcriptError}`,
         },
         { status: 400 }
       );

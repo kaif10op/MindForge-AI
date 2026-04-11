@@ -37,41 +37,40 @@ export function Desktop({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, openWindow]);
 
-  // Handle URL syncing (optional, keeps OS feel pure by preventing default Next.js navigation wiping state, our OS naturally handles state)
-  // Instead of full routing, apps inside windows function natively.
-  
   return (
-    <div className="fixed inset-0 overflow-hidden bg-black text-foreground font-sans flex flex-col os-desktop-bg">
-      {/* Background Image / Wallpaper */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center z-0" 
-        style={{ 
-          backgroundImage: "url('https://images.unsplash.com/photo-1542401886-65d6c61db217?q=80&w=3840&auto=format&fit=crop')", // Example macOS-like abstract wallpaper
-          filter: "brightness(0.8) contrast(1.1)"
-        }} 
-      />
+    <div className="fixed inset-0 overflow-hidden bg-zinc-950 text-foreground font-sans flex flex-col os-desktop-bg select-none">
+      
+      {/* Dynamic Animated Wallpaper Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-black">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/30 blur-[120px] mix-blend-screen animate-pulse duration-[8000ms]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-700/20 blur-[130px] mix-blend-screen animate-pulse duration-[10000ms]" />
+        <div className="absolute top-[20%] right-[10%] w-[35%] h-[35%] rounded-full bg-blue-500/20 blur-[100px] mix-blend-screen animate-pulse duration-[12000ms]" />
+        <div className="absolute bottom-[10%] left-[20%] w-[45%] h-[45%] rounded-full bg-teal-800/20 blur-[140px] mix-blend-screen animate-pulse duration-[9000ms]" />
+        {/* Grain overlay for premium texture */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')" }}/>
+      </div>
       
       {/* Menu Bar */}
       <MenuBar />
       
       {/* OS Desktop Area */}
-      <div className="flex-1 relative z-10">
+      <div className="flex-1 relative z-10 w-full h-full">
         {windows.map((win) => (
           <Window 
             key={win.id} 
             {...win}
           >
-            {/* If there's a dynamic route id matching the window, we COULD render `children`, but for pure OS isolation: */}
-            <div className="h-full overflow-y-auto custom-scrollbar p-0 m-0">
-               {/* 
-                 Trick: If the current pathname matches this app's route AND there's nested children 
-                 (e.g., viewing a specific note), we render `children`. 
-                 Otherwise we render the root component. 
-                */}
-               { (pathname.includes(`/dashboard/${win.appId === 'dashboard' ? '' : win.appId}`) && pathname !== `/dashboard/${win.appId === 'dashboard' ? '' : win.appId}`) 
-                  ? children 
-                  : APP_COMPONENTS[win.appId] || <div className="p-8">App not found</div>
-               }
+            <div className="h-full w-full overflow-y-auto custom-scrollbar p-0 m-0">
+               { (() => {
+                  const isDashboardWindow = win.appId === 'dashboard';
+                  const isSubRouteOfThisApp = !isDashboardWindow 
+                    ? pathname.startsWith(`/dashboard/${win.appId}/`) 
+                    : false; // Dashboard has no sub-routes inside its window
+
+                  return isSubRouteOfThisApp 
+                    ? children 
+                    : APP_COMPONENTS[win.appId] || <div className="p-8 flex h-full items-center justify-center text-muted-foreground font-light">App launching...</div>;
+               })()}
             </div>
           </Window>
         ))}

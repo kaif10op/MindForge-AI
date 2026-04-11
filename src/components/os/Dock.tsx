@@ -32,37 +32,44 @@ export function Dock() {
   };
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[100]">
-      <div className="glass px-3 py-2 rounded-2xl flex items-end gap-3 shadow-2xl border border-white/10 glow">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[100] group/dock pb-4">
+      <div className="bg-white/10 backdrop-blur-2xl px-4 py-3 rounded-3xl flex items-end gap-4 shadow-2xl border border-white/20 relative before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]">
         {DOCK_ITEMS.map((item) => {
           const isOpen = windows.some((w) => w.appId === item.id);
           const isActive = windows.find((w) => w.appId === item.id)?.id === activeWindowId;
 
           return (
-            <div key={item.id} className="relative group cursor-pointer flex flex-col items-center">
+            <div key={item.id} className="relative group flex flex-col items-center">
               {/* Tooltip */}
-              <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 backdrop-blur text-white text-xs px-3 py-1 rounded shadow-xl pointers-events-none whitespace-nowrap border border-white/10">
+              <div className="absolute -top-14 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-100 bg-black/80 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg shadow-xl pointers-events-none whitespace-nowrap border border-white/10 font-medium tracking-wide">
                 {item.label}
               </div>
 
               {/* Icon */}
               <motion.button
                 onClick={() => handleIconClick(item.id, item.title)}
-                whileHover={{ scale: 1.2, translateY: -10 }}
-                whileTap={{ scale: 0.9 }}
+                initial={{ y: 0 }}
+                whileHover={{ 
+                  y: -12, 
+                  scale: 1.3,
+                  transition: { type: "spring", stiffness: 400, damping: 10 }
+                }}
+                whileTap={{ scale: 0.95 }}
                 className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-lg border border-white/5",
+                  "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border overflow-hidden relative",
                   item.bg,
-                  isActive && "ring-2 ring-white/50"
+                  isActive ? "border-white/40 ring-2 ring-white/20" : "border-white/10 hover:border-white/30"
                 )}
               >
-                <item.icon className={cn("w-6 h-6", item.color)} />
+                {/* Shiny gloss overlay */}
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-2xl" />
+                <item.icon className={cn("w-7 h-7 filter drop-shadow-md", item.color)} />
               </motion.button>
 
               {/* Open Indicator */}
               <div className={cn(
-                "w-1 h-1 rounded-full bg-white/80 transition-all mt-1",
-                isOpen ? "opacity-100" : "opacity-0"
+                "w-1.5 h-1.5 rounded-full mt-2 transition-all duration-300 absolute -bottom-1",
+                isOpen ? "opacity-100 bg-white/70 shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "opacity-0 bg-transparent translate-y-2"
               )} />
             </div>
           );

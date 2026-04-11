@@ -307,19 +307,20 @@ export default function NotesPage() {
               >
                 <Link href={`/dashboard/notes/${note.id}`}>
                   <Card
-                    className={`cursor-pointer hover:shadow-lg transition-all duration-300 h-full py-0 ${
+                    className={`cursor-pointer hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.1)] transition-all duration-300 h-full py-0 bg-white/5 backdrop-blur-xl border-white/10 hover:border-white/30 hover:bg-white/10 ${
                       note.is_pinned
-                        ? "border-primary/30 bg-primary/[0.02] shadow-sm"
-                        : "border-border/50"
+                        ? "border-primary/50 relative overflow-hidden"
+                        : ""
                     }`}
                   >
-                    <CardContent className="p-5">
+                    {note.is_pinned && <div className="absolute top-0 right-0 w-16 h-16 bg-primary/20 blur-xl pointer-events-none rounded-full translate-x-1/2 -translate-y-1/2" />}
+                    <CardContent className="p-5 relative z-10">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
                           {note.is_pinned && (
-                            <Pin className="w-3.5 h-3.5 text-primary fill-primary flex-shrink-0" />
+                            <Pin className="w-4 h-4 text-primary fill-primary flex-shrink-0 drop-shadow-md" />
                           )}
-                          <h3 className="font-semibold text-sm truncate">
+                          <h3 className="font-medium text-[15px] truncate text-white/90">
                             {note.title}
                           </h3>
                         </div>
