@@ -66,6 +66,8 @@ export async function POST(request: Request) {
       transcriptError = err?.message || "Unknown error";
     }
 
+    let rapidApiError = "";
+
     // Fallback — Method 2: RapidAPI (if free method failed and key is available)
     if (!transcriptText && process.env.RAPID_API_KEY) {
       try {
@@ -80,25 +82,34 @@ export async function POST(request: Request) {
           }
         );
 
-        if (proxyResponse.ok) {
-          const jsonResponse = await proxyResponse.json();
+        const jsonResponse = await proxyResponse.json();
+        
+        if (proxyResponse.ok && !jsonResponse.message) {
           const transcriptData = Array.isArray(jsonResponse)
             ? jsonResponse[0]
             : jsonResponse;
           if (transcriptData?.transcriptionAsText) {
             transcriptText = transcriptData.transcriptionAsText;
           }
+        } else {
+          // Rapid API returned an error message (like quota exceeded)
+          rapidApiError = jsonResponse.message || "Unknown proxy error";
         }
       } catch (err: any) {
         console.warn("RapidAPI fallback also failed:", err?.message);
+        rapidApiError = err?.message;
       }
     }
 
     // If both methods failed, return error
     if (!transcriptText) {
+      let combinedError = `Could not fetch transcript. The video may not have captions available. Details: ${transcriptError}`;
+      if (rapidApiError) {
+        combinedError += ` | Proxy Fallback Error: ${rapidApiError}`;
+      }
       return NextResponse.json(
         {
-          error: `Could not fetch transcript. The video may not have captions available. Details: ${transcriptError}`,
+          error: combinedError,
         },
         { status: 400 }
       );
