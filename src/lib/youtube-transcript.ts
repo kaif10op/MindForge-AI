@@ -10,60 +10,29 @@
  * Falls back to RapidAPI if Python is unavailable.
  */
 
-import { execFile } from "child_process";
-import { promisify } from "util";
-import path from "path";
-
-const execFileAsync = promisify(execFile);
-
-interface TranscriptResult {
-  text: string;
-  language: string;
-  segments: number;
-  word_count: number;
-  error?: string;
-}
+import { YoutubeTranscript } from "youtube-transcript";
 
 /**
- * Fetches a YouTube video transcript using the Python youtube_transcript_api.
- * This is the same library that powers VidCrunch's working transcript extraction.
+ * Fetches a YouTube video transcript using the native youtube-transcript package.
+ * This runs natively in Node.js and avoids the need for Python in Vercel serverless functions.
  */
 export async function fetchYouTubeTranscript(videoId: string): Promise<string> {
-  // Method 1: Python youtube_transcript_api (VidCrunch's approach)
   try {
-    const scriptPath = path.join(process.cwd(), "scripts", "fetch_transcript.py");
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
     
-    const { stdout, stderr } = await execFileAsync("python", [scriptPath, videoId], {
-      timeout: 30000, // 30 second timeout
-      maxBuffer: 10 * 1024 * 1024, // 10MB buffer for long transcripts
-      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
-    });
-
-    if (stderr && !stdout) {
-      throw new Error(`Python script error: ${stderr.trim()}`);
-    }
-
-    const result: TranscriptResult = JSON.parse(stdout.trim());
-
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    if (!result.text || result.text.trim().length < 10) {
+    if (!transcript || transcript.length === 0) {
       throw new Error("Transcript is empty or too short");
     }
-
-    return result.text;
-  } catch (error: any) {
-    // If Python is not available or the script fails, throw with details
-    const message = error?.message || "Unknown error";
     
-    if (message.includes("ENOENT") || message.includes("not found") || message.includes("not recognized")) {
-      throw new Error(
-        "Python is not installed or not in PATH. Install Python 3 and youtube-transcript-api: pip install youtube-transcript-api"
-      );
+    const text = transcript.map(item => item.text).join(" ");
+    
+    if (text.trim().length < 10) {
+      throw new Error("Transcript is empty or too short");
     }
     
+    return text;
+  } catch (error: any) {
+    const message = error?.message || "Unknown error";
     throw new Error(`Transcript fetch failed: ${message}`);
   }
 }
